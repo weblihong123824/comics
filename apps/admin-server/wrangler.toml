@@ -1,0 +1,79 @@
+name = "comic-admin"
+pages_build_output_dir = "build/client"
+compatibility_date = "2024-01-01"
+
+[env.production]
+name = "comic-admin"
+
+[env.staging]
+name = "comic-admin-staging"
+
+[env.development]
+name = "comic-admin-dev"
+
+# 环境变量
+[env.production.vars]
+NODE_ENV = "production"
+JWT_SECRET = "your-production-jwt-secret"
+
+[env.staging.vars]
+NODE_ENV = "staging"
+JWT_SECRET = "your-staging-jwt-secret"
+
+[env.development.vars]
+NODE_ENV = "development"
+JWT_SECRET = "your-development-jwt-secret"
+
+# KV存储
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = ""
+
+[[env.production.kv_namespaces]]
+binding = "SESSIONS"
+id = ""
+
+[[env.staging.kv_namespaces]]
+binding = "CACHE"
+id = ""
+
+[[env.staging.kv_namespaces]]
+binding = "SESSIONS"
+id = ""
+
+[[env.development.kv_namespaces]]
+binding = "CACHE"
+id = ""
+
+[[env.development.kv_namespaces]]
+binding = "SESSIONS"
+id = ""
+
+# D1数据库
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "comic-system-prod"
+database_id = ""
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "comic-system-staging"
+database_id = ""
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "comic-system-dev"
+database_id = ""
+
+# R2存储
+[[env.production.r2_buckets]]
+binding = "FILES"
+bucket_name = "comic-files-prod"
+
+[[env.staging.r2_buckets]]
+binding = "FILES"
+bucket_name = "comic-files-staging"
+
+[[env.development.r2_buckets]]
+binding = "FILES"
+bucket_name = "comic-files-dev"
