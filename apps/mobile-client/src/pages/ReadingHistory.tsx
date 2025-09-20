@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Clock, Play } from 'lucide-react';
-import { ReadingHistory as ReadingHistoryType, Comic, Chapter } from '@fun-box/shared-types';
+import type { ReadingHistory as ReadingHistoryType, Comic, Chapter } from '@comic/shared-types';
 
 interface HistoryItem extends ReadingHistoryType {
   comic: Pick<Comic, 'id' | 'title' | 'cover' | 'author'>;

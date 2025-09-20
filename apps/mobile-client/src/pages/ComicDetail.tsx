@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Eye, Heart, Share, Lock, Play } from 'lucide-react';
-import { Comic, Chapter, User } from '@fun-box/shared-types';
-import { Button } from '@fun-box/ui-components';
+import type { Comic, Chapter, User } from '@comic/shared-types';
+import { Button } from '@comic/ui-components';
 
 export const ComicDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -12,7 +12,10 @@ export const ComicDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isPurchased, setIsPurchased] = useState(false);
+  const [purchasedChapters, setPurchasedChapters] = useState<Set<string>>(new Set());
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [purchaseType, setPurchaseType] = useState<'full' | 'chapter'>('full');
+  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
 
   useEffect(() => {
     // Mock data - 实际中会从API获取
@@ -110,13 +113,20 @@ export const ComicDetail: React.FC = () => {
     }, 800);
   }, [id]);
 
-  const handlePurchase = () => {
+  const handlePurchase = (type: 'full' | 'chapter' = 'full', chapter?: Chapter) => {
+    setPurchaseType(type);
+    setSelectedChapter(chapter || null);
     setShowPurchaseModal(true);
   };
 
   const confirmPurchase = () => {
-    // 处理购买逻辑
-    setIsPurchased(true);
+    if (purchaseType === 'full') {
+      // 购买整部漫画
+      setIsPurchased(true);
+    } else if (selectedChapter) {
+      // 购买单章节
+      setPurchasedChapters(prev => new Set([...prev, selectedChapter.id]));
+    }
     setShowPurchaseModal(false);
   };
 
@@ -268,20 +278,25 @@ export const ComicDetail: React.FC = () => {
 
         <div className="space-y-2">
           {chapters.map((chapter) => {
-            const canRead = chapter.isFree || isPurchased;
+            const canRead = chapter.isFree || isPurchased || purchasedChapters.has(chapter.id);
+            const chapterPrice = 299; // 单章节价格，实际应该从API获取
             
             return (
-              <Link
+              <div
                 key={chapter.id}
-                to={canRead ? `/comic/${comic.id}/chapter/${chapter.chapterNumber}` : '#'}
-                onClick={!canRead ? (e) => e.preventDefault() : undefined}
                 className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                   canRead
-                    ? 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    : 'border-gray-200 dark:border-gray-700 opacity-60'
+                    ? 'border-gray-200 dark:border-gray-700'
+                    : 'border-gray-200 dark:border-gray-700'
                 }`}
               >
-                <div className="flex items-center space-x-3">
+                <Link
+                  to={canRead ? `/comic/${comic.id}/chapter/${chapter.chapterNumber}` : '#'}
+                  onClick={!canRead ? (e) => e.preventDefault() : undefined}
+                  className={`flex items-center space-x-3 flex-1 ${
+                    canRead ? 'hover:bg-gray-50 dark:hover:bg-gray-700 -m-3 p-3 rounded-lg' : ''
+                  }`}
+                >
                   {!canRead && <Lock size={16} className="text-gray-400" />}
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -291,7 +306,7 @@ export const ComicDetail: React.FC = () => {
                       {chapter.pageCount}页 • {chapter.publishedAt?.toLocaleDateString()}
                     </p>
                   </div>
-                </div>
+                </Link>
                 
                 <div className="flex items-center space-x-2">
                   {chapter.isFree && (
@@ -299,9 +314,17 @@ export const ComicDetail: React.FC = () => {
                       免费
                     </span>
                   )}
+                  {!canRead && !chapter.isFree && (
+                    <button
+                      onClick={() => handlePurchase('chapter', chapter)}
+                      className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
+                    >
+                      ¥{(chapterPrice / 100).toFixed(2)}
+                    </button>
+                  )}
                   {canRead && <Play size={16} className="text-gray-400" />}
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
@@ -315,7 +338,11 @@ export const ComicDetail: React.FC = () => {
               购买确认
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              确定要花费 ¥{(comic.price / 100).toFixed(2)} 购买《{comic.title}》的全部章节吗？
+              {purchaseType === 'full' ? (
+                `确定要花费 ¥${(comic.price / 100).toFixed(2)} 购买《${comic.title}》的全部章节吗？`
+              ) : (
+                `确定要花费 ¥2.99 购买《${selectedChapter?.title}》吗？`
+              )}
             </p>
             <div className="flex space-x-3">
               <Button

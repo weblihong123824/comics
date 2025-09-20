@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Settings, Menu } from 'lucide-react';
-import { Page, Chapter } from '@fun-box/shared-types';
+import { ArrowLeft, Settings, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Page, Chapter } from '@comic/shared-types';
 
 export const ComicReader: React.FC = () => {
   const { id, chapterNumber } = useParams<{ id: string; chapterNumber: string }>();
@@ -13,6 +13,9 @@ export const ComicReader: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [readingMode, setReadingMode] = useState<'vertical' | 'horizontal'>('vertical');
+  const [allChapters, setAllChapters] = useState<Chapter[]>([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [targetChapter, setTargetChapter] = useState<Chapter | null>(null);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
@@ -20,30 +23,40 @@ export const ComicReader: React.FC = () => {
   useEffect(() => {
     // Mock data - 实际中会从API获取
     const mockChapter: Chapter = {
-      id: '1',
+      id: chapterNumber!,
       comicId: id!,
       chapterNumber: parseInt(chapterNumber!),
       title: `第${chapterNumber}话：初次相遇`,
       pageCount: 15,
       isFree: true,
-      isPublished: true,
-      publishedAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     const mockPages: Page[] = Array.from({ length: 15 }, (_, i) => ({
       id: `page-${i + 1}`,
-      chapterId: '1',
+      chapterId: chapterNumber!,
       pageNumber: i + 1,
       imageUrl: `https://picsum.photos/800/1200?random=${i + 1}`,
-      width: 800,
-      height: 1200,
+      createdAt: new Date(),
+    }));
+
+    // Mock 所有章节数据
+    const mockAllChapters: Chapter[] = Array.from({ length: 10 }, (_, i) => ({
+      id: `${i + 1}`,
+      comicId: id!,
+      chapterNumber: i + 1,
+      title: `第${i + 1}话：故事继续`,
+      pageCount: 15,
+      isFree: i < 3, // 前3章免费
+      createdAt: new Date(),
+      updatedAt: new Date(),
     }));
 
     setTimeout(() => {
       setChapter(mockChapter);
       setPages(mockPages);
+      setAllChapters(mockAllChapters);
       setLoading(false);
     }, 500);
   }, [id, chapterNumber]);
@@ -135,6 +148,43 @@ export const ComicReader: React.FC = () => {
     }
   };
 
+  // 章节导航
+  const currentChapterIndex = allChapters.findIndex(ch => ch.chapterNumber === parseInt(chapterNumber!));
+  const prevChapter = currentChapterIndex > 0 ? allChapters[currentChapterIndex - 1] : null;
+  const nextChapter = currentChapterIndex < allChapters.length - 1 ? allChapters[currentChapterIndex + 1] : null;
+
+  const goToPrevChapter = () => {
+    if (prevChapter) {
+      navigate(`/comic/${id}/chapter/${prevChapter.chapterNumber}`);
+    }
+  };
+
+  const goToNextChapter = () => {
+    if (nextChapter) {
+      // 检查下一章是否需要付费
+      const canRead = nextChapter.isFree; // 这里应该检查用户是否已购买
+      if (canRead) {
+        navigate(`/comic/${id}/chapter/${nextChapter.chapterNumber}`);
+      } else {
+        // 显示付费弹窗
+        setTargetChapter(nextChapter);
+        setShowPaymentModal(true);
+      }
+    }
+  };
+
+  const handlePurchaseChapter = () => {
+    // 处理章节购买逻辑
+    if (targetChapter) {
+      // 这里应该调用购买API
+      console.log('购买章节:', targetChapter.title);
+      // 购买成功后跳转
+      navigate(`/comic/${id}/chapter/${targetChapter.chapterNumber}`);
+      setShowPaymentModal(false);
+      setTargetChapter(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -151,22 +201,21 @@ export const ComicReader: React.FC = () => {
       }`}>
         <div className="flex items-center justify-between">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/comic/${id}`)}
             className="p-2 text-white hover:text-gray-300"
           >
             <ArrowLeft size={20} />
           </button>
           
-          <div className="text-center">
+          <div className="text-center flex-1">
             <h1 className="text-sm font-medium">{chapter?.title}</h1>
-            <p className="text-xs text-gray-400">
-              {currentPage} / {pages.length}
-            </p>
           </div>
           
-          <button className="p-2 text-white hover:text-gray-300">
-            <Settings size={20} />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button className="p-2 text-white hover:text-gray-300">
+              <Settings size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -224,86 +273,113 @@ export const ComicReader: React.FC = () => {
         )}
       </div>
 
-      {/* 底部控制栏 */}
+      {/* 底部控制栏 - 简化版 */}
       <div className={`fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm p-4 z-20 transition-transform duration-300 safe-area-bottom ${
         showControls ? 'translate-y-0' : 'translate-y-full'
       }`}>
-        {/* 进度条 */}
-        <div className="mb-4">
-          <div className="w-full bg-gray-700 rounded-full h-2">
-            <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(currentPage / pages.length) * 100}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-2">
-            <span>第 {currentPage} 页</span>
-            <span>共 {pages.length} 页</span>
-          </div>
-        </div>
-
-        {/* 控制按钮 */}
+        {/* 章节导航 */}
         <div className="flex items-center justify-between">
           <button
-            onClick={prevPage}
-            disabled={currentPage <= 1}
-            className="px-4 py-2 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={goToPrevChapter}
+            disabled={!prevChapter}
+            className="flex items-center space-x-2 px-4 py-3 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            上一页
+            <ChevronLeft size={20} />
+            <span className="text-sm">
+              {prevChapter ? `上一章` : '已是第一章'}
+            </span>
           </button>
           
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setReadingMode(readingMode === 'vertical' ? 'horizontal' : 'vertical')}
-              className="p-2 bg-gray-700 rounded-lg"
-            >
-              <Menu size={16} />
-            </button>
-            
-            <select
-              value={currentPage}
-              onChange={(e) => goToPage(parseInt(e.target.value))}
-              className="bg-gray-700 text-white border-none rounded-lg px-3 py-2 text-sm"
-            >
-              {pages.map((page) => (
-                <option key={page.id} value={page.pageNumber}>
-                  第 {page.pageNumber} 页
-                </option>
-              ))}
-            </select>
+          <div className="text-center">
+            <div className="text-sm font-medium text-white">{chapter?.title}</div>
           </div>
           
           <button
-            onClick={nextPage}
-            disabled={currentPage >= pages.length}
-            className="px-4 py-2 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={goToNextChapter}
+            disabled={!nextChapter}
+            className="flex items-center space-x-2 px-4 py-3 bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            下一页
+            <span className="text-sm">
+              {nextChapter ? `下一章` : '已是最后章'}
+            </span>
+            <ChevronRight size={20} />
           </button>
         </div>
       </div>
 
-      {/* 章节导航 */}
+      {/* 章节付费弹窗 */}
+      {showPaymentModal && targetChapter && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-30">
+          <div className="bg-gray-800 rounded-xl p-6 w-full max-w-sm">
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-white mb-2">解锁章节</h3>
+              <p className="text-gray-300 mb-4">
+                《{targetChapter.title}》需要付费解锁
+              </p>
+              <div className="text-2xl font-bold text-blue-400 mb-6">
+                ¥2.99
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setTargetChapter(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handlePurchaseChapter}
+                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+                >
+                  立即购买
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 章节完成导航 */}
       {(currentPage >= pages.length) && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-30">
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <h3 className="text-lg font-bold mb-4">本章节已读完</h3>
+          <div className="bg-gray-800 rounded-xl p-6 text-center max-w-sm mx-4">
+            <h3 className="text-lg font-bold mb-2 text-white">本章节已读完</h3>
+            <p className="text-gray-400 text-sm mb-6">
+              {nextChapter ? `下一章：${nextChapter.title}` : '已是最后一章'}
+            </p>
+            {nextChapter && !nextChapter.isFree && (
+              <div className="text-blue-400 text-sm mb-4">
+                下一章需要付费解锁 ¥2.99
+              </div>
+            )}
             <div className="flex space-x-3">
               <button
-                onClick={() => navigate(-1)}
-                className="px-4 py-2 bg-gray-600 rounded-lg"
+                onClick={() => navigate(`/comic/${id}`)}
+                className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors"
               >
                 返回详情
               </button>
-              <button
-                onClick={() => {
-                  const nextChapter = parseInt(chapterNumber!) + 1;
-                  navigate(`/comic/${id}/chapter/${nextChapter}`);
-                }}
-                className="px-4 py-2 bg-blue-600 rounded-lg"
-              >
-                下一章
-              </button>
+              {nextChapter ? (
+                <button
+                  onClick={goToNextChapter}
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                    nextChapter.isFree 
+                      ? 'bg-blue-600 hover:bg-blue-500' 
+                      : 'bg-orange-600 hover:bg-orange-500'
+                  }`}
+                >
+                  {nextChapter.isFree ? '下一章' : '购买下一章'}
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate(`/comic/${id}`)}
+                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg transition-colors"
+                >
+                  完结撒花
+                </button>
+              )}
             </div>
           </div>
         </div>

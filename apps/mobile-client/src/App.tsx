@@ -13,10 +13,10 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/comic/:id/chapter/:chapterNumber" element={<ComicReader />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<ComicList />} />
         <Route path="comic/:id" element={<ComicDetail />} />
-        <Route path="comic/:id/chapter/:chapterNumber" element={<ComicReader />} />
         <Route path="user" element={<UserCenter />} />
         <Route path="favorites" element={<Favorites />} />
         <Route path="history" element={<ReadingHistory />} />

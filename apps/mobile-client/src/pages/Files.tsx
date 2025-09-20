@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Grid, List, MoreVertical } from 'lucide-react';
-import { FileItem, ViewMode } from '@fun-box/shared-types';
-import { formatFileSize, formatDate } from '@fun-box/utils';
+import type { FileItem, ViewMode } from '@comic/shared-types';
+import { formatFileSize, formatDate } from '@comic/utils';
 
 export const Files: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');

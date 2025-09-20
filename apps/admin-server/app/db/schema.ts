@@ -125,7 +125,9 @@ export const orders = sqliteTable('orders', {
   id: text('id').primaryKey().notNull(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   comicId: text('comic_id').notNull().references(() => comics.id, { onDelete: 'cascade' }),
+  chapterId: text('chapter_id').references(() => chapters.id, { onDelete: 'cascade' }), // 可选，单章节购买
   amount: integer('amount').notNull(), // 支付金额 (积分)
+  type: text('type', { enum: ['comic', 'chapter'] }).default('comic').notNull(), // 购买类型
   status: text('status', { enum: ['pending', 'completed', 'failed'] }).default('pending').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
   completedAt: text('completed_at'), // ISO date string
@@ -133,4 +135,24 @@ export const orders = sqliteTable('orders', {
   return {
     userIdIdx: uniqueIndex('idx_orders_user_id').on(table.userId),
   };
+});
+
+// User Chapter Purchases (for individual chapter purchases)
+export const userChapterPurchases = sqliteTable('user_chapter_purchases', {
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  chapterId: text('chapter_id').notNull().references(() => chapters.id, { onDelete: 'cascade' }),
+  purchasedAt: text('purchased_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => {
+  return {
+    pk: uniqueIndex('idx_user_chapter_purchases_pk').on(table.userId, table.chapterId),
+  };
+});
+
+// System Settings Table
+export const systemSettings = sqliteTable('system_settings', {
+  key: text('key').primaryKey().notNull(),
+  value: text('value').notNull(),
+  type: text('type', { enum: ['string', 'number', 'boolean', 'json'] }).default('string').notNull(),
+  description: text('description'),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });

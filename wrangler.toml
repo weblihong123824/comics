@@ -2,14 +2,14 @@
 
 # 客户移动端配置
 [[pages]]
-name = "fun-box-mobile"
+name = "comic-mobile"
 source = "apps/mobile-client"
 build_dir = "dist"
 compatibility_date = "2024-01-01"
 
 # 后台管理端+服务端配置
 [[pages]]
-name = "fun-box-admin"
+name = "comic-admin"
 source = "apps/admin-server"
 build_dir = "build/client"
 functions_dir = "build/server"
@@ -40,13 +40,13 @@ id = ""
 # D1数据库配置
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "fun-box-prod"
+database_name = "comic-prod"
 database_id = ""
 
 # R2存储配置
 [[env.production.r2_buckets]]
 binding = "FILES"
-bucket_name = "fun-box-files"
+bucket_name = "comic-files"
 
 # 开发环境配置
 [[env.development.kv_namespaces]]
@@ -59,9 +59,9 @@ id = ""
 
 [[env.development.d1_databases]]
 binding = "DB"
-database_name = "fun-box-dev"
+database_name = "comic-dev"
 database_id = ""
 
 [[env.development.r2_buckets]]
 binding = "FILES"
-bucket_name = "fun-box-files-dev"
+bucket_name = "comic-files-dev"

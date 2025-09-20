@@ -16,7 +16,10 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./app/*"]
+      "~/*": ["./app/*"],
+      "@comic/ui-components": ["../../packages/ui-components/src"],
+      "@comic/utils": ["../../packages/utils/src"],
+      "@comic/shared-types": ["../../packages/shared-types/src"]
     },
     "types": [
       "@cloudflare/workers-types",

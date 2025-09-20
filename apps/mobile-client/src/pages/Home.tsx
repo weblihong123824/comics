@@ -1,15 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Files, Upload, Clock, TrendingUp } from 'lucide-react';
-import { Button } from '@fun-box/ui-components';
+import { Button } from '@comic/ui-components';
 
 export const Home: React.FC = () => {
   return (
     <div className="p-4 space-y-6">
       {/* 欢迎区域 */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">欢迎使用 Fun Box</h1>
-        <p className="text-blue-100 mb-4">管理您的文件，随时随地访问</p>
+        <h1 className="text-2xl font-bold mb-2">欢迎使用 Comic</h1>
+        <p className="text-blue-100 mb-4">阅读您的漫画，随时随地享受</p>
         <Link to="/upload">
           <Button className="bg-white text-blue-600 hover:bg-blue-50">
             立即上传文件

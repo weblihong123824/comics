@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "~/lib/utils"
+import { cn } from "@comic/utils"
 
 function Separator({ className, orientation = "horizontal", ...props }: React.HTMLAttributes<HTMLDivElement> & { orientation?: "horizontal" | "vertical" }) {
   return (

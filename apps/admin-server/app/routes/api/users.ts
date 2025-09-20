@@ -1,15 +1,10 @@
-import { json } from 'react-router';
-import { createDatabase } from '../../db';
+// json function removed in React Router v7
+import { getDatabase } from '../../db/dev';
 import { eq, sql } from 'drizzle-orm';
 import { users } from '../../db/schema';
 
-interface Env {
-  DB: any;
-}
-
 export async function loader({ request, context }: any) {
-  const env = context.cloudflare.env as Env;
-  const db = createDatabase(env);
+  const db = getDatabase(context);
   
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get('page') || '1');
@@ -36,13 +31,13 @@ export async function loader({ request, context }: any) {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(offset, offset + limit);
     
-    return json({ 
+    return { 
       success: true, 
       data: { users: paginatedUsers, total, page, limit } 
-    });
+    };
   } catch (error) {
     console.error('Error fetching users:', error);
-    return json(
+    return Response.json(
       { success: false, error: 'Failed to fetch users' },
       { status: 500 }
     );
@@ -50,8 +45,7 @@ export async function loader({ request, context }: any) {
 }
 
 export async function action({ request, context }: any) {
-  const env = context.cloudflare.env as Env;
-  const db = createDatabase(env);
+  const db = getDatabase(context);
   
   if (request.method === 'POST') {
     try {
@@ -59,20 +53,20 @@ export async function action({ request, context }: any) {
       
       // 这里应该包含用户创建逻辑
       // 暂时返回成功响应
-      return json({ 
+      return Response.json({ 
         success: true, 
         message: '用户创建功能待实现' 
       }, { status: 501 });
     } catch (error) {
       console.error('Error creating user:', error);
-      return json(
+      return Response.json(
         { success: false, error: 'Failed to create user' },
         { status: 500 }
       );
     }
   }
   
-  return json(
+  return Response.json(
     { success: false, error: 'Method not allowed' },
     { status: 405 }
   );

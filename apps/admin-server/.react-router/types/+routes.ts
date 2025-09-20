@@ -13,6 +13,9 @@ type Pages = {
   "/": {
     params: {};
   };
+  "/favicon.ico": {
+    params: {};
+  };
   "/admin/dashboard": {
     params: {};
   };
@@ -23,6 +26,15 @@ type Pages = {
     params: {};
   };
   "/admin/analytics": {
+    params: {};
+  };
+  "/admin/auth": {
+    params: {};
+  };
+  "/admin/orders": {
+    params: {};
+  };
+  "/admin/settings": {
     params: {};
   };
   "/api/comics": {
@@ -44,16 +56,30 @@ type Pages = {
   "/api/upload": {
     params: {};
   };
+  "/api/auth": {
+    params: {};
+  };
+  "/api/purchase": {
+    params: {};
+  };
 };
 
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/admin/dashboard" | "/admin/comics" | "/admin/users" | "/admin/analytics" | "/api/comics" | "/api/comics/:id" | "/api/chapters/:id" | "/api/users" | "/api/upload";
+    page: "/" | "/favicon.ico" | "/admin/dashboard" | "/admin/comics" | "/admin/users" | "/admin/analytics" | "/admin/auth" | "/admin/orders" | "/admin/settings" | "/api/comics" | "/api/comics/:id" | "/api/chapters/:id" | "/api/users" | "/api/upload" | "/api/auth" | "/api/purchase";
   };
   "routes/index.tsx": {
     id: "routes/index";
     page: "/";
+  };
+  "routes/favicon.ts": {
+    id: "routes/favicon";
+    page: "/favicon.ico";
+  };
+  "components/admin/AdminLayout.tsx": {
+    id: "components/admin/AdminLayout";
+    page: "/admin/dashboard" | "/admin/comics" | "/admin/users" | "/admin/analytics" | "/admin/auth" | "/admin/orders" | "/admin/settings";
   };
   "routes/admin/dashboard.tsx": {
     id: "routes/admin/dashboard";
@@ -70,6 +96,18 @@ type RouteFiles = {
   "routes/admin/analytics.tsx": {
     id: "routes/admin/analytics";
     page: "/admin/analytics";
+  };
+  "routes/admin/auth.tsx": {
+    id: "routes/admin/auth";
+    page: "/admin/auth";
+  };
+  "routes/admin/orders.tsx": {
+    id: "routes/admin/orders";
+    page: "/admin/orders";
+  };
+  "routes/admin/settings.tsx": {
+    id: "routes/admin/settings";
+    page: "/admin/settings";
   };
   "routes/api/comics.ts": {
     id: "routes/api/comics";
@@ -90,5 +128,13 @@ type RouteFiles = {
   "routes/api/upload.ts": {
     id: "routes/api/upload";
     page: "/api/upload";
+  };
+  "routes/api/auth.ts": {
+    id: "routes/api/auth";
+    page: "/api/auth";
+  };
+  "routes/api/purchase.ts": {
+    id: "routes/api/purchase";
+    page: "/api/purchase";
   };
 };

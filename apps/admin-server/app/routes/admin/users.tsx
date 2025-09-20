@@ -1,212 +1,156 @@
-import { json, useLoaderData } from 'react-router';
-import { Users, Star, Coins, Calendar } from 'lucide-react';
-import { createDatabase } from '../../db';
-import { eq, sql } from 'drizzle-orm';
-import { users } from '../../db/schema';
-// import type { Route } from './+types/users';
+import type { MetaFunction } from "react-router";
 
-interface Env {
-  DB: any;
+interface TechItem {
+  name: string;
+  description: string;
+  icon: string;
 }
 
-export async function loader({ context }: any) {
-  const env = context.cloudflare.env as Env;
-  const db = createDatabase(env);
-  
-  // 获取用户列表
-  const userList = await db.select().from(users).orderBy(sql`created_at DESC`).limit(50).all();
-  
-  // 获取用户统计
-  const [totalUsers] = await db.select({ count: sql<number>`count(*)` }).from(users);
-  const [vipUsers] = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.isVip, true));
-  const [totalBalance] = await db.select({ sum: sql<number>`sum(balance)` }).from(users);
-  
-  const stats = {
-    totalUsers: totalUsers.count,
-    vipUsers: vipUsers.count,
-    totalBalance: totalBalance.sum || 0,
-    regularUsers: totalUsers.count - vipUsers.count,
-  };
-  
-  return json({ users: userList, stats });
+interface FeatureItem {
+  title: string;
+  description: string;
+  icon: string;
 }
 
-export default function Users() {
-  const { users: userList, stats } = useLoaderData<typeof loader>();
+interface LoaderData {
+  techStack: TechItem[];
+  features: FeatureItem[];
+}
 
-  const statCards = [
-    {
-      title: '总用户数',
-      value: stats.totalUsers,
-      icon: Users,
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'VIP用户',
-      value: stats.vipUsers,
-      icon: Star,
-      color: 'bg-yellow-500',
-    },
-    {
-      title: '普通用户',
-      value: stats.regularUsers,
-      icon: Users,
-      color: 'bg-gray-500',
-    },
-    {
-      title: '总积分余额',
-      value: stats.totalBalance.toLocaleString(),
-      icon: Coins,
-      color: 'bg-green-500',
-    },
+export const meta: MetaFunction = () => {
+  return [
+    { title: "关于我们 - Fun Box" },
+    { name: "description", content: "了解 Fun Box 文件管理系统的技术架构和特性" },
   ];
+};
+
+export async function loader(): Promise<LoaderData> {
+  // 模拟异步数据加载
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  return {
+    techStack: [
+      {
+        name: "React Router v7",
+        description: "现代化的 React 路由解决方案，支持数据加载和类型安全",
+        icon: "⚛️"
+      },
+      {
+        name: "TypeScript",
+        description: "提供类型安全和更好的开发体验",
+        icon: "📘"
+      },
+      {
+        name: "Tailwind CSS",
+        description: "实用优先的 CSS 框架，快速构建现代化界面",
+        icon: "🎨"
+      },
+      {
+        name: "Vite",
+        description: "快速的构建工具和开发服务器",
+        icon: "⚡"
+      }
+    ],
+    features: [
+      {
+        title: "文件管理",
+        description: "支持文件上传、预览、组织和管理",
+        icon: "📁"
+      },
+      {
+        title: "响应式设计",
+        description: "适配各种设备和屏幕尺寸",
+        icon: "📱"
+      },
+      {
+        title: "主题切换",
+        description: "支持明暗主题切换",
+        icon: "🌙"
+      },
+      {
+        title: "现代化界面",
+        description: "采用最新的设计趋势和用户体验",
+        icon: "✨"
+      }
+    ]
+  };
+}
+
+export default function About({ loaderData }: { loaderData: LoaderData }) {
+  const { techStack, features } = loaderData;
 
   return (
-    <div className="space-y-6">
-      {/* 页面标题 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          用户管理
+    <div className="h-full">
+      <div className="text-center mb-16">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          关于 Fun Box
         </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          管理和查看用户信息，监控用户活动
+        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          Fun Box 是一个现代化的文件管理和预览系统，致力于为用户提供简洁、高效的文件操作体验。
         </p>
       </div>
 
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat) => (
-          <div
-            key={stat.title}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex items-center">
-              <div className={`p-3 rounded-lg ${stat.color} bg-opacity-10`}>
-                <stat.icon className={`h-6 w-6 text-opacity-80 ${stat.color.replace('bg-', 'text-')}`} />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {stat.title}
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stat.value}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 用户列表 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-            最近注册用户
+        {/* 技术栈 */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+            技术架构
           </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {techStack.map((tech: TechItem, index: number) => (
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+              >
+                <div className="text-4xl mb-4">{tech.icon}</div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  {tech.name}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">
+                  {tech.description}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  用户信息
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  会员状态
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  积分余额
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  注册时间
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {userList.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        {user.avatarUrl ? (
-                          <img
-                            className="h-10 w-10 rounded-full object-cover"
-                            src={user.avatarUrl}
-                            alt={user.username}
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              {user.username.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {user.username}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {user.email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {user.isVip ? (
-                      <div className="space-y-1">
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
-                          <Star className="h-3 w-3 mr-1" />
-                          VIP会员
-                        </span>
-                        {user.vipExpiresAt && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            到期: {new Date(user.vipExpiresAt).toLocaleDateString('zh-CN')}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                        普通用户
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900 dark:text-white">
-                      <Coins className="h-4 w-4 mr-1 text-yellow-500" />
-                      {user.balance.toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {new Date(user.createdAt).toLocaleDateString('zh-CN')}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                        查看详情
-                      </button>
-                      <button className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
-                        充值积分
-                      </button>
-                      {!user.isVip && (
-                        <button className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300">
-                          升级VIP
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* 功能特性 */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+            核心功能
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {features.map((feature: FeatureItem, index: number) => (
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start space-x-4">
+                  <div className="text-3xl">{feature.icon}</div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 项目信息 */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+            项目愿景
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 text-center max-w-4xl mx-auto leading-relaxed">
+            我们致力于创建一个简单、高效、美观的文件管理解决方案。
+            通过现代化的技术栈和用户体验设计，让文件管理变得更加轻松愉快。
+            Fun Box 不仅仅是一个工具，更是一个展示现代 Web 开发最佳实践的平台。
+          </p>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

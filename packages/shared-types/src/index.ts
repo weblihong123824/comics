@@ -17,7 +17,8 @@ export interface Comic {
   title: string;
   author: string;
   description: string;
-  coverImageUrl: string;
+  cover: string; // 封面图片URL
+  coverImageUrl?: string; // 兼容旧字段
   status: 'ongoing' | 'completed'; // 连载中 | 完结
   genre: string[];
   tags: string[];
@@ -78,3 +79,51 @@ export interface Order {
   createdAt: Date;
   completedAt?: Date;
 }
+
+// 漫画筛选条件
+export interface ComicFilters {
+  genre?: string[];
+  status?: 'ongoing' | 'completed';
+  sortBy?: 'latest' | 'popular' | 'rating';
+  search?: string;
+}
+
+// 阅读历史
+export interface ReadingHistory {
+  id: string;
+  userId: string;
+  comicId: string;
+  comic: Comic;
+  chapterId: string;
+  chapter: Chapter;
+  pageNumber: number;
+  readAt: Date;
+}
+
+// 文件上传进度
+export interface UploadProgress {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  uploadedSize: number;
+  progress: number; // 0-100
+  status: 'pending' | 'uploading' | 'completed' | 'failed';
+  error?: string;
+}
+
+// 文件项
+export interface FileItem {
+  id: string;
+  name: string;
+  type: 'file' | 'folder';
+  size: number;
+  mimeType?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  parentId?: string;
+  url?: string;
+  thumbnailUrl?: string;
+}
+
+// 视图模式
+export type ViewMode = 'grid' | 'list';

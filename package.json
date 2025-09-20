@@ -1,14 +1,15 @@
 {
-  "name": "fun-box",
+  "name": "comic",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "dev:mobile": "turbo dev --filter=@fun-box/mobile-client",
-    "dev:admin": "turbo dev --filter=@fun-box/admin-server",
-    "build:mobile": "turbo build --filter=@fun-box/mobile-client",
-    "build:admin": "turbo build --filter=@fun-box/admin-server",
+    "dev:all": "turbo dev",
+    "dev:mobile": "turbo dev --filter=@comic/mobile-client",
+    "dev:admin": "turbo dev --filter=@comic/admin-server",
+    "build:mobile": "turbo build --filter=@comic/mobile-client",
+    "build:admin": "turbo build --filter=@comic/admin-server",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "clean": "turbo clean"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Star, Eye, Heart, Clock } from 'lucide-react';
-import { Comic, ComicFilters } from '@fun-box/shared-types';
+import type { Comic, ComicFilters } from '@comic/shared-types';
 
 export const ComicList: React.FC = () => {
   const [comics, setComics] = useState<Comic[]>([]);

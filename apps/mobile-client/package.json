@@ -1,5 +1,5 @@
 {
-  "name": "@fun-box/mobile-client",
+  "name": "@comic/mobile-client",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -9,16 +9,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@fun-box/shared-types": "workspace:*",
-    "@fun-box/ui-components": "workspace:*",
-    "@fun-box/utils": "workspace:*",
+    "@comic/shared-types": "workspace:*",
+    "@comic/ui-components": "workspace:*",
+    "@comic/utils": "workspace:*",
     "@tanstack/react-query": "^5.87.4",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^6.28.1",
-    "lucide-react": "^0.544.0"
+    "react-router-dom": "^6.28.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.4",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.3.4",

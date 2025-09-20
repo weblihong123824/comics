@@ -1,15 +1,10 @@
-import { json } from 'react-router';
-import { createDatabase } from '../../db';
+// json function removed in React Router v7
+import { getDatabase } from '../../db/dev';
 import { ComicService } from '../../services/comic.service';
 // import type { Route } from './+types/comics';
 
-interface Env {
-  DB: any;
-}
-
 export async function loader({ request, context }: any) {
-  const env = context.cloudflare.env as Env;
-  const db = createDatabase(env);
+  const db = getDatabase(context);
   const comicService = new ComicService(db);
   
   const url = new URL(request.url);
@@ -26,13 +21,13 @@ export async function loader({ request, context }: any) {
       status,
     });
     
-    return json({ 
+    return { 
       success: true, 
       data: { comics, total, page, limit } 
-    });
+    };
   } catch (error) {
     console.error('Error fetching comics:', error);
-    return json(
+    return Response.json(
       { success: false, error: 'Failed to fetch comics' },
       { status: 500 }
     );
@@ -40,29 +35,28 @@ export async function loader({ request, context }: any) {
 }
 
 export async function action({ request, context }: any) {
-  const env = context.cloudflare.env as Env;
-  const db = createDatabase(env);
+  const db = getDatabase(context);
   const comicService = new ComicService(db);
   
   if (request.method === 'POST') {
     try {
       const data = await request.json();
       const newComic = await comicService.createComic(data);
-      return json({ 
+      return Response.json({ 
         success: true, 
         data: newComic,
         message: '漫画创建成功' 
       }, { status: 201 });
     } catch (error) {
       console.error('Error creating comic:', error);
-      return json(
+      return Response.json(
         { success: false, error: 'Failed to create comic' },
         { status: 500 }
       );
     }
   }
   
-  return json(
+  return Response.json(
     { success: false, error: 'Method not allowed' },
     { status: 405 }
   );

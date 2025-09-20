@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Star, Eye, Trash2 } from 'lucide-react';
-import { Comic } from '@fun-box/shared-types';
+import type { Comic } from '@comic/shared-types';
 
 export const Favorites: React.FC = () => {
   const [favorites, setFavorites] = useState<Comic[]>([]);

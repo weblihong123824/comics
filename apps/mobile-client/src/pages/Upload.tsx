@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Upload as UploadIcon, Camera, Image, FileText } from 'lucide-react';
-import { Button } from '@fun-box/ui-components';
-import { validateFile, formatFileSize } from '@fun-box/utils';
-import { UploadProgress } from '@fun-box/shared-types';
+import { Button } from '@comic/ui-components';
+import { validateFile, formatFileSize } from '@comic/utils';
+import type { UploadProgress } from '@comic/shared-types';
 
 export const Upload: React.FC = () => {
   const [dragOver, setDragOver] = useState(false);

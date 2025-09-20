@@ -1,18 +1,13 @@
-import { json, useLoaderData, useActionData, Form, useSearchParams } from 'react-router';
+import { useLoaderData, useActionData, Form, useSearchParams } from 'react-router';
 import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Upload, Eye } from 'lucide-react';
-import { createDatabase } from '../../db';
+import { Plus, Search, Edit, Trash2, Upload, Eye, Grid, List, Filter, MoreVertical, Calendar, BookOpen, Settings, DollarSign } from 'lucide-react';
+import { Button, Input, Label, Textarea } from '@comic/ui-components';
+import { getDatabase } from '../../db/dev';
 import { ComicService } from '../../services/comic.service';
-import AdminLayout from '../../components/admin/AdminLayout';
 // import type { Route } from './+types/comics';
 
-interface Env {
-  DB: any;
-}
-
 export async function loader({ request, context }: any) {
-  const env = context.cloudflare.env as Env;
-  const db = createDatabase(env);
+  const db = getDatabase(context);
   const comicService = new ComicService(db);
   
   const url = new URL(request.url);
@@ -27,12 +22,11 @@ export async function loader({ request, context }: any) {
     status,
   });
   
-  return json({ comics, total, currentPage: page });
+  return { comics, total, currentPage: page };
 }
 
 export async function action({ request, context }: any) {
-  const env = context.cloudflare.env as Env;
-  const db = createDatabase(env);
+  const db = getDatabase(context);
   const comicService = new ComicService(db);
   
   const formData = await request.formData();
@@ -41,7 +35,7 @@ export async function action({ request, context }: any) {
   if (action === 'delete') {
     const comicId = formData.get('comicId') as string;
     await comicService.deleteComic(comicId);
-    return json({ success: true, message: '漫画删除成功' });
+    return { success: true, message: '漫画删除成功' };
   }
   
   if (action === 'create') {
@@ -58,10 +52,22 @@ export async function action({ request, context }: any) {
     };
     
     const newComic = await comicService.createComic(comicData);
-    return json({ success: true, message: '漫画创建成功', comic: newComic });
+    return { success: true, message: '漫画创建成功', comic: newComic };
   }
   
-  return json({ success: false, message: '未知操作' }, { status: 400 });
+  if (action === 'update_settings') {
+    const comicId = formData.get('comicId') as string;
+    const updateData = {
+      freeChapters: parseInt(formData.get('freeChapters') as string),
+      price: parseInt(formData.get('price') as string),
+      status: formData.get('status') as 'ongoing' | 'completed',
+    };
+    
+    await comicService.updateComic(comicId, updateData);
+    return { success: true, message: '漫画设置更新成功' };
+  }
+  
+  return Response.json({ success: false, message: '未知操作' }, { status: 400 });
 }
 
 export default function Comics() {
@@ -69,6 +75,9 @@ export default function Comics() {
   const actionData = useActionData<typeof action>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [selectedComic, setSelectedComic] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   const totalPages = Math.ceil(total / 10);
 
@@ -101,170 +110,262 @@ export default function Comics() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-      {/* 页面标题和操作 */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            漫画管理
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            管理您的漫画库，添加新漫画或编辑现有内容
-          </p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          添加漫画
-        </button>
+    <div className="space-y-6">
+      {/* 页面标题 */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">漫画管理</h1>
+        <p className="text-gray-600 dark:text-gray-400">管理您的漫画作品集</p>
       </div>
 
-      {/* 搜索和过滤 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="搜索漫画标题或作者..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                defaultValue={searchParams.get('search') || ''}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </div>
+      {/* 顶部操作栏 */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center space-x-4">
+          {/* 搜索框 */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="搜索漫画..."
+              defaultValue={searchParams.get('search') || ''}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-64 pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
           </div>
+          
+          {/* 状态筛选 */}
           <select
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            defaultValue={searchParams.get('status') || 'all'}
+            value={searchParams.get('status') || 'all'}
             onChange={(e) => handleStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
-            <option value="all">所有状态</option>
+            <option value="all">全部状态</option>
             <option value="ongoing">连载中</option>
             <option value="completed">已完结</option>
           </select>
         </div>
+        
+        <div className="flex items-center space-x-3">
+          {/* 视图切换 */}
+          <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-md transition-colors ${
+                viewMode === 'grid' 
+                  ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <Grid size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-md transition-colors ${
+                viewMode === 'list' 
+                  ? 'bg-white dark:bg-gray-600 text-blue-600 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <List size={16} />
+            </button>
+          </div>
+          
+          {/* 添加漫画按钮 */}
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            上传漫画
+          </button>
+        </div>
       </div>
 
-      {/* 漫画列表 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  漫画信息
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  状态
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  定价
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  数据
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {comics.map((comic) => (
-                <tr key={comic.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <img
-                        className="h-16 w-12 rounded-lg object-cover"
-                        src={comic.coverImageUrl}
-                        alt={comic.title}
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {comic.title}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          作者: {comic.author}
-                        </div>
-                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          {comic.genre.join(', ')}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="space-y-1">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          comic.status === 'ongoing'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                        }`}
-                      >
-                        {comic.status === 'ongoing' ? '连载中' : '已完结'}
-                      </span>
-                      {comic.hasUpdates && (
-                        <div className="text-xs text-orange-600 dark:text-orange-400">
-                          有更新
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    <div className="space-y-1">
-                      <div>前{comic.freeChapters}章免费</div>
-                      <div className="text-blue-600 dark:text-blue-400">{comic.price}积分</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    <div className="space-y-1">
-                      <div className="flex items-center">
-                        <Eye className="h-3 w-3 mr-1" />
-                        {comic.views.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        更新: {new Date(comic.updatedAt).toLocaleDateString('zh-CN')}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => {/* TODO: 打开编辑模态框 */}}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => {/* TODO: 跳转到章节管理 */}}
-                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                      >
-                        <Upload className="h-4 w-4" />
-                      </button>
-                      <Form method="post" style={{ display: 'inline' }}>
-                        <input type="hidden" name="_action" value="delete" />
-                        <input type="hidden" name="comicId" value={comic.id} />
-                        <button
-                          type="submit"
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          onClick={(e) => {
-                            if (!confirm('确定要删除这部漫画吗？')) {
-                              e.preventDefault();
-                            }
+      {/* 漫画内容区域 */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 min-h-[600px]">
+        <div className="p-6">
+          {comics.length > 0 ? (
+            <>
+              {viewMode === 'grid' ? (
+                /* 网格视图 - 类似文件管理器 */
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {comics.map((comic) => (
+                    <div
+                      key={comic.id}
+                      className="group relative bg-white dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-400 hover:shadow-md transition-all duration-200 cursor-pointer"
+                    >
+                      <div className="aspect-[3/4] relative overflow-hidden rounded-t-xl">
+                        <img
+                          src={comic.coverImageUrl || '/placeholder-comic.jpg'}
+                          alt={comic.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-comic.jpg';
                           }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </Form>
+                        />
+                        {/* 状态标签 */}
+                        <div className="absolute top-2 left-2">
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              comic.status === 'ongoing'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {comic.status === 'ongoing' ? '连载' : '完结'}
+                          </span>
+                        </div>
+                        {/* 操作按钮 */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex space-x-1">
+                            <button 
+                              onClick={() => {
+                                setSelectedComic(comic);
+                                setShowSettingsModal(true);
+                              }}
+                              className="p-1.5 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-colors"
+                              title="漫画设置"
+                            >
+                              <Settings size={14} className="text-blue-600" />
+                            </button>
+                            <button className="p-1.5 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-colors">
+                              <Edit size={14} className="text-gray-600" />
+                            </button>
+                            <Form method="post" style={{ display: 'inline' }}>
+                              <input type="hidden" name="_action" value="delete" />
+                              <input type="hidden" name="comicId" value={comic.id} />
+                              <button
+                                type="submit"
+                                className="p-1.5 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-colors"
+                                onClick={(e) => {
+                                  if (!confirm('确定要删除这部漫画吗？')) {
+                                    e.preventDefault();
+                                  }
+                                }}
+                              >
+                                <Trash2 size={14} className="text-red-500" />
+                              </button>
+                            </Form>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3">
+                        <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-1">
+                          {comic.title}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mb-2">
+                          {comic.author}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                          <span className="flex items-center">
+                            <Eye size={12} className="mr-1" />
+                            {comic.views.toLocaleString()}
+                          </span>
+                          <span>
+                            {new Date(comic.updatedAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  ))}
+                </div>
+              ) : (
+                /* 列表视图 */
+                <div className="space-y-3">
+                  {comics.map((comic) => (
+                    <div
+                      key={comic.id}
+                      className="flex items-center p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 border border-gray-100 dark:border-gray-600"
+                    >
+                      <img
+                        src={comic.coverImageUrl || '/placeholder-comic.jpg'}
+                        alt={comic.title}
+                        className="w-12 h-16 rounded-lg object-cover shadow-sm"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-comic.jpg';
+                        }}
+                      />
+                      <div className="ml-4 flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium text-gray-900 dark:text-white mb-1">
+                              {comic.title}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {comic.author}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
+                            <span
+                              className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                comic.status === 'ongoing'
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {comic.status === 'ongoing' ? '连载中' : '已完结'}
+                            </span>
+                            <span className="flex items-center">
+                              <Eye size={14} className="mr-1" />
+                              {comic.views.toLocaleString()}
+                            </span>
+                            <span>
+                              {new Date(comic.updatedAt).toLocaleDateString('zh-CN')}
+                            </span>
+                            <div className="flex items-center space-x-2">
+                              <button 
+                                onClick={() => {
+                                  setSelectedComic(comic);
+                                  setShowSettingsModal(true);
+                                }}
+                                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                                title="漫画设置"
+                              >
+                                <Settings size={16} />
+                              </button>
+                              <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                                <Edit size={16} />
+                              </button>
+                              <Form method="post" style={{ display: 'inline' }}>
+                                <input type="hidden" name="_action" value="delete" />
+                                <input type="hidden" name="comicId" value={comic.id} />
+                                <button
+                                  type="submit"
+                                  className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                                  onClick={(e) => {
+                                    if (!confirm('确定要删除这部漫画吗？')) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </Form>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            /* 空状态 */
+            <div className="text-center py-16">
+              <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <BookOpen size={32} className="text-gray-400 dark:text-gray-500" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">暂无漫画</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">开始上传您的第一部漫画作品吧</p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                上传漫画
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 分页 */}
@@ -330,7 +431,110 @@ export default function Comics() {
           </div>
         </div>
       )}
+
+      {/* 漫画设置弹窗 */}
+      {showSettingsModal && selectedComic && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <DollarSign className="mr-3 text-green-600" size={24} />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  漫画设置
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowSettingsModal(false);
+                  setSelectedComic(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                {selectedComic.title}
+              </h4>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                作者：{selectedComic.author}
+              </p>
+            </div>
+
+            <Form method="post" className="space-y-4">
+              <input type="hidden" name="_action" value="update_settings" />
+              <input type="hidden" name="comicId" value={selectedComic.id} />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="freeChapters">免费章节数</Label>
+                  <Input
+                    id="freeChapters"
+                    name="freeChapters"
+                    type="number"
+                    defaultValue={selectedComic.freeChapters}
+                    min="0"
+                    max="20"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="price">整部价格（积分）</Label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    defaultValue={selectedComic.price}
+                    min="0"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="status">连载状态</Label>
+                <select
+                  id="status"
+                  name="status"
+                  defaultValue={selectedComic.status}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="ongoing">连载中</option>
+                  <option value="completed">已完结</option>
+                </select>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  价格说明
+                </h5>
+                <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>• 免费章节：用户可免费阅读</li>
+                  <li>• 付费章节：单章 299 积分</li>
+                  <li>• 整部购买：一次性解锁所有章节</li>
+                </ul>
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowSettingsModal(false);
+                    setSelectedComic(null);
+                  }}
+                >
+                  取消
+                </Button>
+                <Button type="submit">
+                  保存设置
+                </Button>
+              </div>
+            </Form>
+          </div>
+        </div>
+      )}
     </div>
-    </AdminLayout>
   );
 }
