@@ -1,5 +1,5 @@
 import { useLoaderData, useActionData, Form, useSearchParams } from 'react-router';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, Search, Edit, Trash2, Upload, Eye, Grid, List, Filter, MoreVertical, Calendar, BookOpen, Settings, DollarSign } from 'lucide-react';
 import { Button, Input, Label, Textarea } from '@comic/ui-components';
 import { getDatabase } from '../../db/dev';
@@ -39,20 +39,57 @@ export async function action({ request, context }: any) {
   }
   
   if (action === 'create') {
-    const comicData = {
-      title: formData.get('title') as string,
-      author: formData.get('author') as string,
-      description: formData.get('description') as string,
-      coverImageUrl: formData.get('coverImageUrl') as string,
-      status: formData.get('status') as 'ongoing' | 'completed',
-      genre: JSON.parse(formData.get('genre') as string || '[]'),
-      tags: JSON.parse(formData.get('tags') as string || '[]'),
-      freeChapters: parseInt(formData.get('freeChapters') as string || '0'),
-      price: parseInt(formData.get('price') as string || '0'),
-    };
-    
-    const newComic = await comicService.createComic(comicData);
-    return { success: true, message: '漫画创建成功', comic: newComic };
+    try {
+      // 获取表单数据
+      const title = formData.get('title') as string;
+      const author = formData.get('author') as string;
+      const description = formData.get('description') as string;
+      const coverImageUrl = formData.get('coverImageUrl') as string;
+      const status = formData.get('status') as 'ongoing' | 'completed';
+      const genreStr = formData.get('genre') as string;
+      const tagsStr = formData.get('tags') as string;
+      const freeChapters = parseInt(formData.get('freeChapters') as string || '0');
+      const price = parseInt(formData.get('price') as string || '0');
+
+      // 基本验证
+      if (!title?.trim()) {
+        return { success: false, message: '漫画标题不能为空' };
+      }
+      if (!author?.trim()) {
+        return { success: false, message: '作者名称不能为空' };
+      }
+      if (!description?.trim()) {
+        return { success: false, message: '漫画简介不能为空' };
+      }
+      if (!coverImageUrl?.trim()) {
+        return { success: false, message: '封面图片URL不能为空' };
+      }
+
+      // 处理分类和标签
+      const genre = genreStr ? genreStr.split(',').map(g => g.trim()).filter(g => g) : [];
+      const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+
+      const comicData = {
+        title: title.trim(),
+        author: author.trim(),
+        description: description.trim(),
+        coverImageUrl: coverImageUrl.trim(),
+        status,
+        genre,
+        tags,
+        freeChapters: Math.max(0, freeChapters),
+        price: Math.max(0, price),
+      };
+      
+      const newComic = await comicService.createComic(comicData);
+      return { success: true, message: '漫画创建成功！', comic: newComic };
+    } catch (error) {
+      console.error('创建漫画失败:', error);
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : '创建漫画时发生未知错误，请稍后重试' 
+      };
+    }
   }
   
   if (action === 'update_settings') {
@@ -78,6 +115,16 @@ export default function Comics() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedComic, setSelectedComic] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // 创建成功后自动关闭模态框
+  React.useEffect(() => {
+    if (actionData?.success && showCreateModal) {
+      const timer = setTimeout(() => {
+        setShowCreateModal(false);
+      }, 2000); // 2秒后自动关闭
+      return () => clearTimeout(timer);
+    }
+  }, [actionData, showCreateModal]);
   
   const totalPages = Math.ceil(total / 10);
 
@@ -227,8 +274,12 @@ export default function Comics() {
                             >
                               <Settings size={14} className="text-blue-600" />
                             </button>
-                            <button className="p-1.5 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-colors">
-                              <Edit size={14} className="text-gray-600" />
+                            <button 
+                              onClick={() => window.location.href = `/admin/comics/${comic.id}/chapters`}
+                              className="p-1.5 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-colors"
+                              title="管理章节"
+                            >
+                              <BookOpen size={14} className="text-green-600" />
                             </button>
                             <Form method="post" style={{ display: 'inline' }}>
                               <input type="hidden" name="_action" value="delete" />
@@ -322,8 +373,12 @@ export default function Comics() {
                               >
                                 <Settings size={16} />
                               </button>
-                              <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                                <Edit size={16} />
+                              <button 
+                                onClick={() => window.location.href = `/admin/comics/${comic.id}/chapters`}
+                                className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                                title="管理章节"
+                              >
+                                <BookOpen size={16} />
                               </button>
                               <Form method="post" style={{ display: 'inline' }}>
                                 <input type="hidden" name="_action" value="delete" />
@@ -400,31 +455,182 @@ export default function Comics() {
         )}
       </div>
 
-      {/* TODO: 创建漫画模态框 */}
+      {/* 创建漫画模态框 */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+          <div className="relative top-10 mx-auto p-6 border w-full max-w-2xl shadow-lg rounded-xl bg-white dark:bg-gray-800">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                添加新漫画
-              </h3>
-              <Form method="post" className="space-y-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  添加新漫画
+                </h3>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <Form method="post" className="space-y-6">
                 <input type="hidden" name="_action" value="create" />
-                {/* TODO: 完整的表单字段 */}
-                <div className="flex justify-end space-x-3">
-                  <button
+                
+                {/* 基本信息 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="title">漫画标题 *</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      type="text"
+                      required
+                      placeholder="请输入漫画标题"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="author">作者 *</Label>
+                    <Input
+                      id="author"
+                      name="author"
+                      type="text"
+                      required
+                      placeholder="请输入作者名称"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="description">漫画简介 *</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    required
+                    placeholder="请输入漫画简介..."
+                    rows={3}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="coverImageUrl">封面图片URL *</Label>
+                  <Input
+                    id="coverImageUrl"
+                    name="coverImageUrl"
+                    type="url"
+                    required
+                    placeholder="https://example.com/cover.jpg"
+                    className="mt-1"
+                  />
+                </div>
+
+                {/* 分类和标签 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="genre">分类</Label>
+                    <Input
+                      id="genre"
+                      name="genre"
+                      type="text"
+                      placeholder="热血,冒险,搞笑 (用逗号分隔)"
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">多个分类请用逗号分隔</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="tags">标签</Label>
+                    <Input
+                      id="tags"
+                      name="tags"
+                      type="text"
+                      placeholder="校园,青春,治愈 (用逗号分隔)"
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">多个标签请用逗号分隔</p>
+                  </div>
+                </div>
+
+                {/* 状态和定价 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="status">连载状态</Label>
+                    <select
+                      id="status"
+                      name="status"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="ongoing">连载中</option>
+                      <option value="completed">已完结</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="freeChapters">免费章节数</Label>
+                    <Input
+                      id="freeChapters"
+                      name="freeChapters"
+                      type="number"
+                      min="0"
+                      max="20"
+                      defaultValue="3"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="price">整部价格（积分）</Label>
+                    <Input
+                      id="price"
+                      name="price"
+                      type="number"
+                      min="0"
+                      defaultValue="2999"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                {/* 提示信息 */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                    💡 创建提示
+                  </h4>
+                  <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                    <li>• 封面图片建议尺寸：300x400px，格式：JPG/PNG</li>
+                    <li>• 免费章节数决定用户可免费阅读的章节数量</li>
+                    <li>• 整部价格为用户一次性解锁所有章节的价格</li>
+                    <li>• 单章节价格固定为299积分</li>
+                  </ul>
+                </div>
+
+                {/* 错误提示 */}
+                {actionData && !actionData.success && (
+                  <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      ❌ {actionData.message || '创建失败，请检查输入信息'}
+                    </p>
+                  </div>
+                )}
+
+                {/* 成功提示 */}
+                {actionData && actionData.success && (
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      ✅ {actionData.message}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
                   >
                     取消
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                  >
-                    创建
-                  </button>
+                  </Button>
+                  <Button type="submit">
+                    创建漫画
+                  </Button>
                 </div>
               </Form>
             </div>

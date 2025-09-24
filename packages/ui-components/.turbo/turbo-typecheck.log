@@ -1,0 +1,12 @@
+
+> @comic/ui-components@0.1.0 typecheck /Users/lhzgh/Desktop/comic/packages/ui-components
+> tsc --noEmit
+
+src/badge.tsx(3,20): error TS2307: Cannot find module '@comic/utils' or its corresponding type declarations.
+src/button.tsx(3,20): error TS2307: Cannot find module '@comic/utils' or its corresponding type declarations.
+src/card.tsx(2,20): error TS2307: Cannot find module '@comic/utils' or its corresponding type declarations.
+src/input.tsx(2,20): error TS2307: Cannot find module '@comic/utils' or its corresponding type declarations.
+src/label.tsx(2,20): error TS2307: Cannot find module '@comic/utils' or its corresponding type declarations.
+src/separator.tsx(2,20): error TS2307: Cannot find module '@comic/utils' or its corresponding type declarations.
+src/textarea.tsx(2,20): error TS2307: Cannot find module '@comic/utils' or its corresponding type declarations.
+ ELIFECYCLE  Command failed with exit code 2.

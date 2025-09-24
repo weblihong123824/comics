@@ -12,230 +12,253 @@ export async function seed(db: Database) {
   await db.delete(chapters);
   await db.delete(comics);
   await db.delete(users);
-
+  
   console.log('已清除现有数据');
 
   // 创建测试用户
-  const user1Id = createId('user');
-  const user2Id = createId('user');
-  const adminId = createId('user');
-
-  await db.insert(users).values([
+  const testUsers = [
     {
-      id: user1Id,
-      username: 'testuser1',
-      email: 'user1@example.com',
-      passwordHash: '$2a$10$hashedpassword1', // 实际应用中需要正确的哈希
-      balance: 1000,
-      isVip: true,
-      vipExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: user2Id,
-      username: 'testuser2',
-      email: 'user2@example.com',
-      passwordHash: '$2a$10$hashedpassword2',
-      balance: 500,
-      isVip: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: adminId,
+      id: createId('user'),
       username: 'admin',
       email: 'admin@comic.com',
-      passwordHash: '$2a$10$hashedpasswordadmin',
-      balance: 10000,
-      isVip: true,
+      passwordHash: 'admin123', // 简化的密码，生产环境应该加密
+      avatarUrl: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      isVip: true,
+      vipExpiresAt: null, // 永久VIP
+      balance: 10000,
     },
-  ]);
+    {
+      id: createId('user'),
+      username: 'testuser',
+      email: 'test@example.com',
+      passwordHash: '$2b$10$K8BQC8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8', // password: test123
+      avatarUrl: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isVip: true,
+      vipExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30天后过期
+      balance: 1000,
+    },
+    {
+      id: createId('user'),
+      username: 'reader',
+      email: 'reader@example.com',
+      passwordHash: '$2b$10$K8BQC8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8W8', // password: reader123
+      avatarUrl: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isVip: false,
+      vipExpiresAt: null,
+      balance: 500,
+    },
+  ];
 
+  await db.insert(users).values(testUsers);
   console.log('已创建测试用户');
 
   // 创建测试漫画
-  const comic1Id = createId('comic');
-  const comic2Id = createId('comic');
-  const comic3Id = createId('comic');
+  const testComics = [
+    {
+      id: createId('comic'),
+      title: '进击的巨人',
+      author: '谏山创',
+      description: '在一个被巨人威胁的世界里，人类为了生存而战斗的故事。',
+      coverImageUrl: '/uploads/cover/attack-on-titan.jpg',
+      status: 'completed' as const,
+      genre: JSON.stringify(['动作', '剧情', '奇幻']),
+      tags: JSON.stringify(['热血', '战斗', '悬疑']),
+      views: 15420,
+      likes: 2341,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastChapterUpdate: new Date().toISOString(),
+      hasUpdates: false,
+      freeChapters: 3,
+      price: 999,
+      isRecommended: true,
+      sortOrder: 1,
+    },
+    {
+      id: createId('comic'),
+      title: '鬼灭之刃',
+      author: '吾峠呼世晴',
+      description: '少年炭治郎为了拯救变成鬼的妹妹而踏上斩鬼之路。',
+      coverImageUrl: '/uploads/cover/demon-slayer.jpg',
+      status: 'completed' as const,
+      genre: JSON.stringify(['动作', '超自然', '历史']),
+      tags: JSON.stringify(['热血', '兄妹情', '成长']),
+      views: 18750,
+      likes: 3102,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastChapterUpdate: new Date().toISOString(),
+      hasUpdates: false,
+      freeChapters: 5,
+      price: 1299,
+      isRecommended: true,
+      sortOrder: 2,
+    },
+    {
+      id: createId('comic'),
+      title: '我的英雄学院',
+      author: '堀越耕平',
+      description: '在一个超能力普及的世界里，少年绿谷出久追求成为英雄的故事。',
+      coverImageUrl: '/uploads/cover/my-hero-academia.jpg',
+      status: 'ongoing' as const,
+      genre: JSON.stringify(['动作', '超级英雄', '学园']),
+      tags: JSON.stringify(['热血', '友情', '成长', '超能力']),
+      views: 12890,
+      likes: 1876,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastChapterUpdate: new Date().toISOString(),
+      hasUpdates: true,
+      freeChapters: 2,
+      price: 899,
+      isRecommended: false,
+      sortOrder: 3,
+    },
+    {
+      id: createId('comic'),
+      title: '一拳超人',
+      author: 'ONE',
+      description: '埼玉是一个能够一拳击败任何敌人的超级英雄，但他对此感到无聊。',
+      coverImageUrl: '/uploads/cover/one-punch-man.jpg',
+      status: 'ongoing' as const,
+      genre: JSON.stringify(['动作', '喜剧', '超级英雄']),
+      tags: JSON.stringify(['搞笑', '无敌', '英雄']),
+      views: 9876,
+      likes: 1543,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastChapterUpdate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7天前
+      hasUpdates: false,
+      freeChapters: 1,
+      price: 699,
+      isRecommended: false,
+      sortOrder: 4,
+    },
+  ];
 
-  // 创建漫画1
-  await db.insert(comics).values({
-    id: comic1Id,
-    title: '英雄联盟：源计划',
-    author: 'Riot Games',
-    description: '探索源计划宇宙的起源和英雄们的命运。在这个充满科幻色彩的世界中，机械与魔法交融，英雄们为了保护世界而战。',
-    coverImageUrl: '/covers/project_lol.jpg',
-    status: 'ongoing',
-    genre: JSON.stringify(['科幻', '动作', '冒险']),
-    tags: JSON.stringify(['英雄联盟', '机甲', '热血']),
-    views: 15420,
-    likes: 1203,
-    freeChapters: 3,
-    price: 150,
-    lastChapterUpdate: new Date().toISOString(),
-    hasUpdates: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  });
-
-  // 创建漫画2
-  await db.insert(comics).values({
-    id: comic2Id,
-    title: '星际争霸：虫群之心',
-    author: 'Blizzard Entertainment',
-    description: '凯瑞甘的复仇之路，虫群的崛起。一个关于背叛、救赎和复仇的史诗故事。',
-    coverImageUrl: '/covers/starcraft_swarm.jpg',
-    status: 'completed',
-    genre: JSON.stringify(['科幻', '战争', '史诗']),
-    tags: JSON.stringify(['星际争霸', '虫族', '史诗']),
-    views: 28350,
-    likes: 2156,
-    freeChapters: 2,
-    price: 200,
-    hasUpdates: false,
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  });
-
-  // 创建漫画3
-  await db.insert(comics).values({
-    id: comic3Id,
-    title: '赛博朋克2077：夜之城传说',
-    author: 'CD Projekt RED',
-    description: '在赛博朋克的世界中，探索夜之城的黑暗秘密，体验科技与人性的冲突。',
-    coverImageUrl: '/covers/cyberpunk_2077.jpg',
-    status: 'ongoing',
-    genre: JSON.stringify(['赛博朋克', '科幻', '动作']),
-    tags: JSON.stringify(['赛博朋克', '未来', '黑暗']),
-    views: 8750,
-    likes: 654,
-    freeChapters: 1,
-    price: 120,
-    lastChapterUpdate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    hasUpdates: true,
-    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  });
-
+  await db.insert(comics).values(testComics);
   console.log('已创建测试漫画');
 
-  // 为漫画1创建章节
-  const chapter1_1Id = createId('chapter');
-  const chapter1_2Id = createId('chapter');
-  const chapter1_3Id = createId('chapter');
-  const chapter1_4Id = createId('chapter');
-
-  await db.insert(chapters).values([
-    {
-      id: chapter1_1Id,
-      comicId: comic1Id,
-      chapterNumber: 1,
-      title: '第一章：觉醒',
-      pageCount: 15,
-      isFree: true,
-      createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: chapter1_2Id,
-      comicId: comic1Id,
-      chapterNumber: 2,
-      title: '第二章：集结',
-      pageCount: 18,
-      isFree: true,
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: chapter1_3Id,
-      comicId: comic1Id,
-      chapterNumber: 3,
-      title: '第三章：冲突',
-      pageCount: 22,
-      isFree: true,
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: chapter1_4Id,
-      comicId: comic1Id,
-      chapterNumber: 4,
-      title: '第四章：反击',
-      pageCount: 20,
-      isFree: false,
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ]);
-
+  // 为每个漫画创建章节
+  for (const comic of testComics) {
+    const chapterCount = comic.title === '进击的巨人' ? 139 : 
+                       comic.title === '鬼灭之刃' ? 205 : 
+                       comic.title === '我的英雄学院' ? 380 : 150;
+    
+    const chapters = [];
+    for (let i = 1; i <= Math.min(chapterCount, 10); i++) { // 只创建前10章作为示例
+      chapters.push({
+        id: createId('chapter'),
+        comicId: comic.id,
+        chapterNumber: i,
+        title: `第${i}话`,
+        pageCount: Math.floor(Math.random() * 20) + 15, // 15-35页
+        createdAt: new Date(Date.now() - (chapterCount - i) * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - (chapterCount - i) * 24 * 60 * 60 * 1000).toISOString(),
+        isFree: i <= comic.freeChapters,
+        isPublished: true,
+      });
+    }
+    
+    await db.insert(chapters).values(chapters);
+  }
   console.log('已创建章节');
 
-  // 为第一章创建示例页面
-  const pages1 = Array.from({ length: 5 }, (_, i) => ({
-    id: createId('page'),
-    chapterId: chapter1_1Id,
-    pageNumber: i + 1,
-    imageUrl: `/pages/comic1/chapter1/page${i + 1}.jpg`,
-    createdAt: new Date().toISOString(),
-  }));
-
-  await db.insert(pages).values(pages1);
-
+  // 为每个章节创建示例页面
+  const allChapters = await db.select().from(chapters).all();
+  for (const chapter of allChapters.slice(0, 5)) { // 只为前5个章节创建页面
+    const pages = [];
+    for (let i = 1; i <= chapter.pageCount; i++) {
+      pages.push({
+        id: createId('page'),
+        chapterId: chapter.id,
+        pageNumber: i,
+        imageUrl: `/uploads/page/chapter-${chapter.chapterNumber}-page-${i}.jpg`,
+        thumbnailUrl: `/uploads/page/thumb-chapter-${chapter.chapterNumber}-page-${i}.jpg`,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    await db.insert(pages).values(pages);
+  }
   console.log('已创建示例页面');
 
   // 创建用户漫画关系
-  await db.insert(userComics).values([
+  const userComicRelations = [
     {
-      userId: user1Id,
-      comicId: comic1Id,
+      userId: testUsers[0].id, // admin
+      comicId: testComics[0].id, // 进击的巨人
       isFavorited: true,
-      lastReadChapterId: chapter1_3Id,
-      lastReadPageNumber: 15,
-      lastReadAt: new Date().toISOString(),
-    },
-    {
-      userId: user2Id,
-      comicId: comic2Id,
-      purchasedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      isFavorited: true,
-    },
-    {
-      userId: user1Id,
-      comicId: comic3Id,
-      isFavorited: false,
       lastReadChapterId: null,
       lastReadPageNumber: null,
       lastReadAt: null,
+      purchasedAt: new Date().toISOString(),
+      rating: 5,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
-  ]);
+    {
+      userId: testUsers[1].id, // testuser
+      comicId: testComics[1].id, // 鬼灭之刃
+      isFavorited: true,
+      lastReadChapterId: null,
+      lastReadPageNumber: 10,
+      lastReadAt: new Date().toISOString(),
+      purchasedAt: new Date().toISOString(),
+      rating: 4,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      userId: testUsers[2].id, // reader
+      comicId: testComics[2].id, // 我的英雄学院
+      isFavorited: false,
+      lastReadChapterId: null,
+      lastReadPageNumber: 5,
+      lastReadAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2天前
+      purchasedAt: null,
+      rating: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ];
 
+  await db.insert(userComics).values(userComicRelations);
   console.log('已创建用户漫画关系');
 
   // 创建测试订单
-  await db.insert(orders).values([
+  const testOrders = [
     {
       id: createId('order'),
-      userId: user2Id,
-      comicId: comic2Id,
-      amount: 200,
-      status: 'completed',
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: createId('order'),
-      userId: user1Id,
-      comicId: comic1Id,
-      amount: 150,
-      status: 'pending',
+      userId: testUsers[0].id,
+      comicId: testComics[0].id,
+      chapterId: null,
+      amount: 999,
+      type: 'comic' as const,
+      status: 'completed' as const,
       createdAt: new Date().toISOString(),
-      completedAt: null,
+      completedAt: new Date().toISOString(),
+      orderNumber: 'ORD-' + Date.now(),
+      itemId: testComics[0].id,
+      itemTitle: testComics[0].title,
+      originalAmount: 999,
+      discountAmount: 0,
+      paymentMethod: 'credits',
+      transactionId: 'TXN-' + Date.now(),
+      cancelledAt: null,
+      refundedAt: null,
+      metadata: JSON.stringify({ source: 'web' }),
     },
-  ]);
+  ];
 
+  await db.insert(orders).values(testOrders);
   console.log('已创建测试订单');
   console.log('数据库种子数据填充完成！');
 }
+
+

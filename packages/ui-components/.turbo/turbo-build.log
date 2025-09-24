@@ -1,0 +1,4 @@
+
+> @comic/ui-components@0.1.0 build /Users/lhzgh/Desktop/comic/packages/ui-components
+> tsc && vite build
+

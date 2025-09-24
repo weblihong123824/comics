@@ -7,7 +7,8 @@ import {
   User,
   Shield,
   ShoppingCart,
-  Settings
+  Settings,
+  Folder
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -20,6 +21,7 @@ export default function Navigation({ isCollapsed }: NavigationProps) {
   const navigation = [
     { name: '仪表板', href: '/admin/dashboard', icon: Home },
     { name: '漫画管理', href: '/admin/comics', icon: BookOpen },
+    { name: '分类标签', href: '/admin/categories', icon: Folder },
     { name: '用户管理', href: '/admin/users', icon: Users },
     { name: '认证管理', href: '/admin/auth', icon: Shield },
     { name: '订单管理', href: '/admin/orders', icon: ShoppingCart },

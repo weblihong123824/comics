@@ -17,8 +17,7 @@ export interface Comic {
   title: string;
   author: string;
   description: string;
-  cover: string; // 封面图片URL
-  coverImageUrl?: string; // 兼容旧字段
+  coverImageUrl: string; // 封面图片URL
   status: 'ongoing' | 'completed'; // 连载中 | 完结
   genre: string[];
   tags: string[];

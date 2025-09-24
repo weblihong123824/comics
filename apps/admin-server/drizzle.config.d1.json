@@ -1,0 +1,12 @@
+{
+  "schema": "./app/db/schema.ts",
+  "out": "./app/db/migrations",
+  "driver": "d1-http",
+  "dbCredentials": {
+    "accountId": "e4feb4cc66720066a74b8d27e38f9d91",
+    "databaseId": "ce2df114-db14-4b26-8e28-82f5c9fa2e25",
+    "token": "$CLOUDFLARE_D1_TOKEN"
+  },
+  "verbose": true,
+  "strict": true
+}

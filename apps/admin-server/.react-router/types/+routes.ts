@@ -16,10 +16,27 @@ type Pages = {
   "/favicon.ico": {
     params: {};
   };
+  "/admin/login": {
+    params: {};
+  };
   "/admin/dashboard": {
     params: {};
   };
   "/admin/comics": {
+    params: {};
+  };
+  "/admin/comics/:id/chapters": {
+    params: {
+      "id": string;
+    };
+  };
+  "/admin/comics/:id/chapters/:chapterId/pages": {
+    params: {
+      "id": string;
+      "chapterId": string;
+    };
+  };
+  "/admin/categories": {
     params: {};
   };
   "/admin/users": {
@@ -67,7 +84,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/favicon.ico" | "/admin/dashboard" | "/admin/comics" | "/admin/users" | "/admin/analytics" | "/admin/auth" | "/admin/orders" | "/admin/settings" | "/api/comics" | "/api/comics/:id" | "/api/chapters/:id" | "/api/users" | "/api/upload" | "/api/auth" | "/api/purchase";
+    page: "/" | "/favicon.ico" | "/admin/login" | "/admin/dashboard" | "/admin/comics" | "/admin/comics/:id/chapters" | "/admin/comics/:id/chapters/:chapterId/pages" | "/admin/categories" | "/admin/users" | "/admin/analytics" | "/admin/auth" | "/admin/orders" | "/admin/settings" | "/api/comics" | "/api/comics/:id" | "/api/chapters/:id" | "/api/users" | "/api/upload" | "/api/auth" | "/api/purchase";
   };
   "routes/index.tsx": {
     id: "routes/index";
@@ -77,9 +94,13 @@ type RouteFiles = {
     id: "routes/favicon";
     page: "/favicon.ico";
   };
+  "routes/admin/login.tsx": {
+    id: "routes/admin/login";
+    page: "/admin/login";
+  };
   "components/admin/AdminLayout.tsx": {
     id: "components/admin/AdminLayout";
-    page: "/admin/dashboard" | "/admin/comics" | "/admin/users" | "/admin/analytics" | "/admin/auth" | "/admin/orders" | "/admin/settings";
+    page: "/admin/dashboard" | "/admin/comics" | "/admin/comics/:id/chapters" | "/admin/comics/:id/chapters/:chapterId/pages" | "/admin/categories" | "/admin/users" | "/admin/analytics" | "/admin/auth" | "/admin/orders" | "/admin/settings";
   };
   "routes/admin/dashboard.tsx": {
     id: "routes/admin/dashboard";
@@ -88,6 +109,18 @@ type RouteFiles = {
   "routes/admin/comics.tsx": {
     id: "routes/admin/comics";
     page: "/admin/comics";
+  };
+  "routes/admin/comics.$id.chapters.tsx": {
+    id: "routes/admin/comics.$id.chapters";
+    page: "/admin/comics/:id/chapters";
+  };
+  "routes/admin/comics.$id.chapters.$chapterId.pages.tsx": {
+    id: "routes/admin/comics.$id.chapters.$chapterId.pages";
+    page: "/admin/comics/:id/chapters/:chapterId/pages";
+  };
+  "routes/admin/categories.tsx": {
+    id: "routes/admin/categories";
+    page: "/admin/categories";
   };
   "routes/admin/users.tsx": {
     id: "routes/admin/users";

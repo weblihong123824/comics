@@ -32,9 +32,28 @@ export async function action({ request, context }: any) {
     let fileUrl: string;
     
     if (isDev) {
-      // 开发环境：模拟文件上传，返回一个占位符URL
-      fileUrl = `http://localhost:5174/uploads/${fileName}`;
-      console.log(`Development mode: simulated file upload for ${fileName}`);
+      // 开发环境：保存到本地 public 目录
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+      const typeDir = path.join(uploadsDir, type);
+      
+      // 确保目录存在
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      if (!fs.existsSync(typeDir)) {
+        fs.mkdirSync(typeDir, { recursive: true });
+      }
+      
+      // 保存文件
+      const filePath = path.join(typeDir, `${timestamp}-${Math.random().toString(36).substring(2)}.${extension}`);
+      const arrayBuffer = await file.arrayBuffer();
+      fs.writeFileSync(filePath, Buffer.from(arrayBuffer));
+      
+      fileUrl = `/uploads/${type}/${path.basename(filePath)}`;
+      console.log(`Development mode: saved file to ${filePath}`);
     } else {
       // 生产环境：上传到 R2
       const env = context.cloudflare.env;

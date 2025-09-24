@@ -1,0 +1,4 @@
+
+> @comic/shared-types@0.1.0 typecheck /Users/lhzgh/Desktop/comic/packages/shared-types
+> tsc --noEmit
+

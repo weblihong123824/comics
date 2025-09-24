@@ -2,6 +2,9 @@
   "name": "@comic/admin-server",
   "version": "0.1.0",
   "type": "module",
+  "config": {
+    "dbName": "comic-dev"
+  },
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
@@ -9,7 +12,18 @@
     "typecheck": "react-router typegen && tsc",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:deploy": "./scripts/deploy-db.sh",
+    "d1:g": "drizzle-kit generate --config drizzle.config.d1.json",
+    "d1:up": "npx wrangler d1 migrations apply $npm_package_config_dbName",
+    "d1:up:remote": "npx wrangler d1 migrations apply $npm_package_config_dbName --remote",
+    "d1:status": "npx wrangler d1 migrations list $npm_package_config_dbName",
+    "d1:status:remote": "npx wrangler d1 migrations list $npm_package_config_dbName --remote",
+    "d1:execute": "npx wrangler d1 execute $npm_package_config_dbName",
+    "d1:execute:remote": "npx wrangler d1 execute $npm_package_config_dbName --remote",
+    "d1:migrate": "./scripts/migrate-d1.sh",
+    "deploy": "npm run build && wrangler pages deploy",
+    "deploy:full": "npm run db:deploy && npm run deploy"
   },
   "dependencies": {
     "@comic/shared-types": "workspace:*",

@@ -8,6 +8,7 @@ import * as path from 'path';
 
 // 开发环境数据库配置
 let devDb: ReturnType<typeof drizzle> | null = null;
+let migrationCompleted = false;
 
 export function getDevDatabase() {
   if (!devDb) {
@@ -15,21 +16,27 @@ export function getDevDatabase() {
     const sqlite = new Database('./dev.db');
     devDb = drizzle(sqlite, { schema });
     
-    // 运行迁移
-    try {
-      const migrationsFolder = path.join(process.cwd(), 'drizzle');
-      if (fs.existsSync(migrationsFolder)) {
-        migrate(devDb, { migrationsFolder });
-        console.log('✅ Development database migrations completed');
-      } else {
-        console.log('⚠️ No migrations folder found, creating tables manually...');
-        // 如果没有迁移文件，手动创建表
+    // 只在第一次初始化时运行迁移
+    if (!migrationCompleted) {
+      try {
+        const migrationsFolder = path.join(process.cwd(), 'app', 'db', 'drizzle');
+        if (fs.existsSync(migrationsFolder)) {
+          migrate(devDb, { migrationsFolder });
+          // 只在首次启动时显示迁移完成信息
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('✅ Development database initialized');
+          }
+        } else {
+          // 如果没有迁移文件，手动创建表
+          createTablesManually(sqlite);
+        }
+        migrationCompleted = true;
+      } catch (error) {
+        console.error('❌ Database migration error:', error);
+        // 尝试手动创建表
         createTablesManually(sqlite);
+        migrationCompleted = true;
       }
-    } catch (error) {
-      console.error('❌ Database migration error:', error);
-      // 尝试手动创建表
-      createTablesManually(sqlite);
     }
   }
   
@@ -39,7 +46,7 @@ export function getDevDatabase() {
 function createTablesManually(sqlite: Database.Database) {
   try {
     // 读取并执行迁移SQL
-    const migrationPath = path.join(process.cwd(), 'drizzle', '0000_clumsy_miek.sql');
+    const migrationPath = path.join(process.cwd(), 'app', 'db', 'drizzle', '0000_clumsy_miek.sql');
     if (fs.existsSync(migrationPath)) {
       const sql = fs.readFileSync(migrationPath, 'utf8');
       // 分割SQL语句并执行
@@ -50,10 +57,14 @@ function createTablesManually(sqlite: Database.Database) {
           sqlite.exec(trimmed);
         }
       }
-      console.log('✅ Tables created manually from migration file');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ Database tables initialized');
+      }
     }
   } catch (error) {
-    console.warn('⚠️ Could not create tables manually:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️ Could not create tables manually:', error);
+    }
   }
 }
 

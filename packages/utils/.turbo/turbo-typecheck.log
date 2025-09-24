@@ -1,0 +1,4 @@
+
+> @comic/utils@0.1.0 typecheck /Users/lhzgh/Desktop/comic/packages/utils
+> tsc --noEmit
+

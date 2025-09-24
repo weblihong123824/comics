@@ -2,7 +2,7 @@ import { eq, and, gte, sql, desc, asc } from 'drizzle-orm';
 import type { Database } from '../db';
 import { comics, chapters, users, userComics, orders, pages } from '../db/schema';
 import { createId } from '../utils/id';
-import type { Comic, Chapter, Page } from '@fun-box/shared-types';
+import type { Comic, Chapter, Page } from '@comic/shared-types';
 
 export class ComicService {
   private db: Database;
@@ -14,47 +14,82 @@ export class ComicService {
   // --- Comic Management ---
 
   async createComic(data: Omit<Comic, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'likes' | 'hasUpdates'>): Promise<Comic> {
-    const newComicId = createId('comic');
-    
-    const insertData = {
-      id: newComicId,
-      title: data.title,
-      author: data.author,
-      description: data.description,
-      coverImageUrl: data.coverImageUrl,
-      status: data.status,
-      genre: JSON.stringify(data.genre || []),
-      tags: JSON.stringify(data.tags || []),
-      freeChapters: data.freeChapters,
-      price: data.price,
-      views: 0,
-      likes: 0,
-      hasUpdates: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastChapterUpdate: data.lastChapterUpdate?.toISOString() || null,
-    };
+    try {
+      // 数据验证
+      if (!data.title?.trim()) {
+        throw new Error('漫画标题不能为空');
+      }
+      if (!data.author?.trim()) {
+        throw new Error('作者名称不能为空');
+      }
+      if (!data.description?.trim()) {
+        throw new Error('漫画简介不能为空');
+      }
+      if (!data.coverImageUrl?.trim()) {
+        throw new Error('封面图片URL不能为空');
+      }
 
-    await this.db.insert(comics).values(insertData);
-    
-    return {
-      id: newComicId,
-      title: data.title,
-      author: data.author,
-      description: data.description,
-      coverImageUrl: data.coverImageUrl,
-      status: data.status,
-      genre: data.genre || [],
-      tags: data.tags || [],
-      views: 0,
-      likes: 0,
-      hasUpdates: false,
-      freeChapters: data.freeChapters,
-      price: data.price,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastChapterUpdate: data.lastChapterUpdate,
-    };
+      // 检查标题是否已存在
+      const existingComic = await this.db.select()
+        .from(comics)
+        .where(eq(comics.title, data.title.trim()))
+        .all();
+      
+      if (existingComic.length > 0) {
+        throw new Error('该漫画标题已存在，请使用不同的标题');
+      }
+
+      const newComicId = createId('comic');
+      
+      const insertData = {
+        id: newComicId,
+        title: data.title.trim(),
+        author: data.author.trim(),
+        description: data.description.trim(),
+        coverImageUrl: data.coverImageUrl.trim(),
+        status: data.status || 'ongoing',
+        genre: JSON.stringify(data.genre || []),
+        tags: JSON.stringify(data.tags || []),
+        freeChapters: Math.max(0, data.freeChapters || 0),
+        price: Math.max(0, data.price || 0),
+        views: 0,
+        likes: 0,
+        hasUpdates: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastChapterUpdate: data.lastChapterUpdate?.toISOString() || null,
+      };
+
+      await this.db.insert(comics).values(insertData);
+      
+      return {
+        id: newComicId,
+        title: insertData.title,
+        author: insertData.author,
+        description: insertData.description,
+        coverImageUrl: insertData.coverImageUrl,
+        status: insertData.status as 'ongoing' | 'completed',
+        genre: data.genre || [],
+        tags: data.tags || [],
+        views: 0,
+        likes: 0,
+        hasUpdates: false,
+        freeChapters: insertData.freeChapters,
+        price: insertData.price,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastChapterUpdate: data.lastChapterUpdate,
+      };
+    } catch (error) {
+      // 只在非开发环境或严重错误时输出日志
+      if (process.env.NODE_ENV !== 'development' || error instanceof Error && error.message.includes('UNIQUE constraint')) {
+        console.error('创建漫画失败:', error);
+      }
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('创建漫画时发生数据库错误');
+    }
   }
 
   async getComics(filters?: { 

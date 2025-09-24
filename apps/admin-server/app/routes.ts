@@ -7,10 +7,16 @@ export default [
   // 静态资源
   route("favicon.ico", "routes/favicon.ts"),
   
+  // 登录页面 - 不使用Layout
+  route("admin/login", "routes/admin/login.tsx"),
+  
   // 管理后台路由 - 使用Layout包装
   layout("components/admin/AdminLayout.tsx", [
     route("admin/dashboard", "routes/admin/dashboard.tsx"),
     route("admin/comics", "routes/admin/comics.tsx"),
+    route("admin/comics/:id/chapters", "routes/admin/comics.$id.chapters.tsx"),
+    route("admin/comics/:id/chapters/:chapterId/pages", "routes/admin/comics.$id.chapters.$chapterId.pages.tsx"),
+    route("admin/categories", "routes/admin/categories.tsx"),
     route("admin/users", "routes/admin/users.tsx"),
     route("admin/analytics", "routes/admin/analytics.tsx"),
     route("admin/auth", "routes/admin/auth.tsx"),
